@@ -1,7 +1,6 @@
-import sys, queue
+import sys
 
 from crossword import *
-
 
 class CrosswordCreator():
 
@@ -137,30 +136,27 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-
-        q = queue.Queue()
+        queue = []
         if arcs == None:
-            unique_arc = set()
-            for v in self.domains:
-                for other_v in self.domains:
-                    if v != other_v:
-                        unique_arc.add((v, other_v))
-            for arc in unique_arc:
-                q.put(arc)
+            for x in self.domains.keys():
+                for y in self.domains.keys():
+                    if x != y:
+                        queue.append((x, y))
         else:
-            [q.put(v) for v in arcs]
-        while(q.qsize() != 0):
-            arc = q.get()
-            arc = list(arc) 
-            v1, v2 = arc[0], arc[1]
-            if self.revise(v1, v2):
-                if v1.length == 0:  
-                    return False
-                else:
-                    neighbors = self.crossword.neighbors(v1)
-                    neighbors.remove(v2)
-                    for n in neighbors:
-                        q.put(v1, n)
+            [queue.put(arc) for arc in arcs]
+        while(len(queue) != 0):
+            arc = queue[0]
+            queue.remove(arc)
+            if arc:
+                x, y = arc[0], arc[1]
+                if self.revise(x, y):
+                    if len(self.domains[x]) == 0:  
+                        return False
+                    else:
+                        neighbors = self.crossword.neighbors(x)
+                        for n in neighbors:
+                            if n != y:
+                                queue.append((x, n))
         return True
 
     def assignment_complete(self, assignment):
