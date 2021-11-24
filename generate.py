@@ -1,4 +1,4 @@
-import sys
+import sys, queue
 
 from crossword import *
 
@@ -136,27 +136,29 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        queue = []
+
+        q = queue.Queue()
         if arcs == None:
-            for x in self.domains.keys():
-                for y in self.domains.keys():
-                    if x != y:
-                        queue.append((x, y))
+            unique_arc = set()
+            for v in self.domains:
+                for other_v in self.domains:
+                    if v != other_v:
+                        unique_arc.add((v, other_v))
+            for arc in unique_arc:
+                q.put(arc)
         else:
-            [queue.put(arc) for arc in arcs]
-        while(len(queue) != 0):
-            arc = queue[0]
-            queue.remove(arc)
-            if arc:
-                x, y = arc[0], arc[1]
-                if self.revise(x, y):
-                    if len(self.domains[x]) == 0:  
-                        return False
-                    else:
-                        neighbors = self.crossword.neighbors(x)
-                        for n in neighbors:
-                            if n != y:
-                                queue.append((x, n))
+            [q.put(v) for v in arcs]
+        while(q.qsize() != 0):
+            arc = q.get()
+            v1, v2 = arc[0], arc[1]
+            if self.revise(v1, v2):
+                if len(self.domains[v1]) == 0:  
+                    return False
+                else:
+                    neighbors = self.crossword.neighbors(v1)
+                    neighbors.remove(v2)
+                    for n in neighbors:
+                        q.put((v1, n))
         return True
 
     def assignment_complete(self, assignment):
@@ -174,18 +176,22 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-#         The consistent function should check to see if a given assignment is consistent.
+        duplicates = []
+        for k, v in assignment.items():
+            if v in duplicates:
+                return False
+            else:
+                duplicates.append(v)
+            if k.length != len(v):
+                return False
+            neighbourCells = self.crossword.neighbors(k)
+            for neighbor in neighbourCells:
+                overlap = self.crossword.overlaps[k, neighbor]
+                if neighbor in assignment:
+                    if assignment[neighbor][overlap[1]] != v[overlap[0]]:
+                        return False
+        return True
 
-# An assignment is a dictionary where the keys are Variable objects and the values are strings representing the words those variables will take on. 
-# Note that the assignment may not be complete: not all variables will necessarily be present in the assignment.
-
-# An assignment is consistent if it satisfies all of the constraints of the problem: 
-# that is to say, all values are distinct,
-
-#  every value is the correct length, 
-# and there are no conflicts between neighboring variables.
-# The function should return True if the assignment is consistent and return False otherwise.
-        raise NotImplementedError
 
     def order_domain_values(self, var, assignment):
         """
@@ -195,14 +201,24 @@ class CrosswordCreator():
         that rules out the fewest values among the neighbors of `var`.
         """
 
-#         The order_domain_values function should return a list of all of the values in the domain of var, ordered according to the least-constraining values heuristic.
+        # The order_domain_values function should return a list of all of the values in the domain of var,
+        #  ordered according to the least-constraining values heuristic.
 
-# var will be a Variable object, representing a variable in the puzzle.
-# Recall that the least-constraining values heuristic is computed as the number of values ruled out for neighboring unassigned variables. That is to say, if assigning var to a particular value results in eliminating n possible choices for neighboring variables, you should order your results in ascending order of n.
-# Note that any variable present in assignment already has a value, and therefore shouldn’t be counted when computing the number of values ruled out for neighboring unassigned variables.
+        # var will be a Variable object, representing a variable in the puzzle.
+        # Recall that the least-constraining values heuristic is computed as the number of values ruled out for neighboring 
+        # unassigned variables. 
+
+        # I think its something that is restricting the neighbours as less as possible
+
+# That is to say, if assigning var to a particular value results in eliminating n possible choices
+#  for neighboring variables, you should order your results in ascending order of n.
+# Note that any variable present in assignment already has a value, 
+# and therefore shouldn’t be counted when computing the number of values ruled out for neighboring unassigned variables.
 # For domain values that eliminate the same number of possible choices for neighboring variables, any ordering is acceptable.
 # Recall that you can access self.crossword.overlaps to get the overlap, if any, between two variables.
-# It may be helpful to first implement this function by returning a list of values in any arbitrary order (which should still generate correct crossword puzzles). Once your algorithm is working, you can then go back and ensure that the values are returned in the correct order.
+# It may be helpful to first implement this function by returning a list of values in any arbitrary order 
+# (which should still generate correct crossword puzzles). Once your algorithm is working, you can then go back 
+#   and ensure that the values are returned in the correct order.
 # You may find it helpful to sort a list according to a particular key: Python contains some helpful functions for achieving this.
         raise NotImplementedError
 
